@@ -15,12 +15,12 @@ if __name__ == '__main__':
         broker_task = loop.create_task(broker.start_broker(ssl))
         if publish:
             logger.logger.info("Starting subscriber and publisher")
-            client_publisher = loop.create_task(client.measurement_publisher(credentials['username'], credentials['password'], miners, ssl))
-            client_listner = loop.create_task(client.start_client(credentials['username'], credentials['password'], ssl))
+            client_publisher = loop.create_task(client.measurement_publisher(credentials['username'], credentials['password'], ssl))
+            client_listner = loop.create_task(client.start_client(credentials['username'], credentials['password'], miners, ssl))
             tasks = asyncio.gather(broker_task, client_publisher, client_listner)
         else:
             logger.logger.info("Starting subscriber only")
-            client_listner = loop.create_task(client.start_client(credentials['username'], credentials['password'], ssl))
+            client_listner = loop.create_task(client.start_client(credentials['username'], credentials['password'], miners, ssl))
             tasks = asyncio.gather(broker_task, client_listner)
         signal.signal(signal.SIGINT, signal_handler)
         logger.logger.info("started. Press Ctrl+C to stop.")
