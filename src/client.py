@@ -1,5 +1,6 @@
 import asyncio
 import json
+from config import power_topic
 from . import logger, manager
 from hbmqtt.client import MQTTClient, ClientException
 from hbmqtt.mqtt.constants import QOS_1
@@ -17,7 +18,7 @@ async def start_client(username, password, miners, ssl):
         await client.connect(f'mqtt://{username}:{password}@127.0.0.1:1883')
         # await client.connect(f'mqtts://{username}:{password}@broker.mmitech.info/', cafile={ssl['crt']})
         logger.logger.info("Measurement listener connected")
-        await client.subscribe([('controllers/readout', QOS_1)])
+        await client.subscribe([(power_topic, QOS_1)])
         logger.logger.info("Measurement listener subscribed")
         while True:
             message = await client.deliver_message()
@@ -50,7 +51,7 @@ async def measurement_publisher(username, password, ssl):
                 'unit': 'Celsius'
             }
             payload = json.dumps(measurement).encode()
-            await client.publish('controllers/readout', payload, QOS_1, retain=True)
+            await client.publish(power_topic, payload, QOS_1, retain=True)
             # logger.logger.info(f"publisher: payload= {payload}")
             logger.logger.info("Published measurement Sleeping for 10 secs")
             round += 1

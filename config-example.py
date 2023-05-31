@@ -16,6 +16,9 @@ credentials = {
     'password': 'test123!!!',
 }
 
+#topic to subscribe to
+power_topic = "controllers/readout"
+
 # SSL if MQTTS is used instead of MQTT
 ssl = {
     'key': './ssl/mqtt-selfsigned.key',
