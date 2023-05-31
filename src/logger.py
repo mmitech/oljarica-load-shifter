@@ -1,6 +1,7 @@
 import logging
 
 logger = logging.getLogger(__name__)
+logger.propagate = False 
 formatter = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
 log_handler = logging.StreamHandler()
 log_handler.setFormatter(formatter)

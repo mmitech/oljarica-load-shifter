@@ -27,7 +27,7 @@ async def get_miners():
                 miners.append(miner)
             except Exception as e:
                 logger.logger.info(f"failed with error {e}")
-    logger.logger.info(f"{miners}")
+    logger.logger.debug(f"{miners}")
 
 if __name__ == '__main__':
     try:

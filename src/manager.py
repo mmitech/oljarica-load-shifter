@@ -21,8 +21,7 @@ async def load_shifting(miners, payload):
             total_power = int(total_power) + int(miner_data.wattage)
             
             try:
-                # logger.logger.info(f"{miner_data}")
-                # logger.logger.info(f"{miner_data.hostname}: {miner_data.hashrate}TH @ {miner_data.temperature_avg} ˚C")
+                logger.logger.debug(f"{miner_data.hostname}: {miner_data.hashrate}TH @ {miner_data.temperature_avg} ˚C {round(miner_data.wattage/1000, 2)} KW")
                 if int(miner_data.hashrate) > 0:
                     online_miners.append(miner_data.ip)
                 else:
@@ -33,10 +32,9 @@ async def load_shifting(miners, payload):
         power = payload["value"]
         if power - buffer > 0 and len(online_miners) > 0:
             num_miners_to_pause = math.ceil((power - buffer) / miner_avg_kw)
-            logger.logger.info(f"we have a total hashrate of {round(total_hashrate, 2)}TH and we using a total power of {round(total_power/1000, 2)}KW")
-            logger.logger.info(f"these are our online miners {online_miners}")
-            logger.logger.info(f"these are our offline miners {offline_miners}")
-            logger.logger.info(f"we need to pause this number of miners {num_miners_to_pause}")
+            logger.logger.info(f"we have {len(online_miners)} active miners with a total hashrate of {round(total_hashrate, 2)}TH with a total power of {round(total_power/1000, 2)}KW")
+            logger.logger.debug(f"these are our offline miners {offline_miners}")
+            logger.logger.info(f"we need to pause {num_miners_to_pause} miner(s)")
             num_miners_stopped = 0
             try:
                 for shelf, devices in miners_ips.items():
@@ -47,13 +45,13 @@ async def load_shifting(miners, payload):
                                 if miner is not None and num_miners_stopped != num_miners_to_pause:
                                     stop_miner = await miners[miner].stop_mining()
                                     if stop_miner:
-                                        logger.logger.info(f"we successfully paused {device}")
+                                        logger.logger.info(f"successfully paused {device}")
                                         num_miners_stopped += 1
                                     else:
                                         logger.logger.info(f"couldn't stop {device}")
                                 else:
                                     if num_miners_stopped == num_miners_to_pause:
-                                        logger.logger.info(f"we successfully paused {num_miners_to_pause} miners")
+                                        logger.logger.info(f"successfully paused {num_miners_to_pause} miners")
                                     return         
                         except Exception as e:
                             logger.logger.info(f"failed with error {e}")
@@ -61,10 +59,10 @@ async def load_shifting(miners, payload):
                 logger.logger.info(f"failed with error {e}")
         if power - buffer < 0 and abs(power) > buffer and len(offline_miners) > 0:
             num_miners_to_start = math.floor(abs(power + buffer) / miner_avg_kw)
-            logger.logger.info(f"we have a total hashrate of {round(total_hashrate, 2)}TH and we using a total power of {round(total_power/1000, 2)}KW")
-            logger.logger.info(f"these are our online miners {online_miners}")
-            logger.logger.info(f"these are our offline miners {offline_miners}")
-            logger.logger.info(f"we need to start this number of miners {num_miners_to_start}")
+            logger.logger.info(f"we have {len(online_miners)} active miners with a total hashrate of {round(total_hashrate, 2)}TH with a total power of {round(total_power/1000, 2)}KW")
+            logger.logger.debug(f"these are our online miners {online_miners}")
+            logger.logger.debug(f"these are our offline miners {offline_miners}")
+            logger.logger.info(f"we need to start {num_miners_to_start} miner(s)")
             num_miners_started = 0
             try:
                 for shelf, devices in miners_ips.items():
@@ -75,13 +73,13 @@ async def load_shifting(miners, payload):
                                 if miner is not None and num_miners_started != num_miners_to_start:
                                     resume_miner = await miners[miner].resume_mining()
                                     if resume_miner:
-                                        logger.logger.info(f"we successfully resumed {device}")
+                                        logger.logger.info(f"successfully resumed {device}")
                                         num_miners_started += 1
                                     else:
                                         logger.logger.info(f"couldn't resume {device}")
                                 else:
                                     if num_miners_started == num_miners_to_start:
-                                        logger.logger.info(f"we successfully resumed {num_miners_to_start} miners")
+                                        logger.logger.info(f"successfully resumed {num_miners_to_start} miners")
                                     return         
                         except Exception as e:
                             logger.logger.info(f"failed with error {e}")

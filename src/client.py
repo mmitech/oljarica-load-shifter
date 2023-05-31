@@ -25,7 +25,7 @@ async def start_client(username, password, miners, ssl):
             packet = message.publish_packet
             topic = packet.variable_header.topic_name
             payload = packet.payload.data.decode()
-            logger.logger.info(f"Received message - Topic: {topic}, Payload: {payload}")
+            logger.logger.debug(f"Received message - Topic: {topic}, Payload: {payload}")
             # Call a function to process the received measurement event
             payload = json.loads(payload)
             await process_measurement(topic, payload, miners)
@@ -52,7 +52,7 @@ async def measurement_publisher(username, password, ssl):
             }
             payload = json.dumps(measurement).encode()
             await client.publish(power_topic, payload, QOS_1, retain=True)
-            # logger.logger.info(f"publisher: payload= {payload}")
+            logger.logger.debug(f"publisher: payload= {payload}")
             logger.logger.info("Published measurement Sleeping for 10 secs")
             round += 1
             await asyncio.sleep(10)  # Publish data every 5 seconds
