@@ -26,6 +26,7 @@ async def start_client(username, password, miners, ssl):
             payload = packet.payload.data.decode()
             logger.logger.info(f"Received message - Topic: {topic}, Payload: {payload}")
             # Call a function to process the received measurement event
+            payload = json.loads(payload)
             await process_measurement(topic, payload, miners)
     except ClientException as ce:
         logger.logger.error("Client exception: %s", ce)
@@ -35,7 +36,7 @@ async def start_client(username, password, miners, ssl):
         logger.logger.info("stopped")
 
 async def measurement_publisher(username, password, ssl):
-    await asyncio.sleep(5)
+    await asyncio.sleep(3)
     client = MQTTClient()
     try:
         await client.connect(f'mqtt://{username}:{password}@127.0.0.1:1883')
@@ -62,8 +63,7 @@ async def measurement_publisher(username, password, ssl):
 
 
 async def process_measurement(topic, payload, miners):
-    
-    logger.logger.info("doing something")
+    await manager.load_shifting(miners, payload)
     
 
     
