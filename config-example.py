@@ -1,6 +1,9 @@
 # publish test data to the broker (used for teting the sumbscription and data processing)
 publish = False
 
+#logging level (DEBUG, INFO, ERROR)
+logging_level = "INFO"
+
 # The hydro power plant power produced is not constant, 
 # it jumps up and down every second, we give our algo a buffer
 # to use and not go crazy about stopping and starting miners

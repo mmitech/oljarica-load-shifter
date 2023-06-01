@@ -45,5 +45,5 @@ async def start_broker(ssl):
         
     except KeyboardInterrupt:
         await broker.shutdown()
-        logger.logger.info("stopped")
+        logger.logger.info(" stopped")
     

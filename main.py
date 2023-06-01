@@ -18,16 +18,13 @@ async def get_miners():
             try:
                 logger.logger.info(f" Trying to init {device} with IP: {ip}")
                 miner =  await get_miner(ip)
-                # dev_details = await device.api.devdetails()
-                # api_version = await device.api.version()
-                # get_system_info = await device.api.get_system_info()
-                # print(f"get_system_info: {get_system_info}")
-                # print(f"dev_details: {dev_details}")
-                # print(f"dev_details: {api_version}")
                 miners.append(miner)
             except Exception as e:
                 logger.logger.info(f"failed with error {e}")
     logger.logger.debug(f"{miners}")
+    while True:
+        await manager.get_miner_data(miners)
+        await asyncio.sleep(60)
 
 if __name__ == '__main__':
     try:
