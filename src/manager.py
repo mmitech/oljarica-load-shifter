@@ -29,20 +29,30 @@ async def get_miner_data(miners):
     try:
         all_miner_data = await asyncio.gather(*[miner.get_data() for miner in miners])
         for miner_data in all_miner_data:
-            total_hashrate = int(total_hashrate) + int(miner_data.hashrate)
-            total_power = int(total_power) + int(miner_data.wattage)
+            miner_hashrate = int(miner_data.hashrate)
+            if miner_hashrate > 0:
+                if miner_hashrate < 70:
+                    if miner_data.left_board_hashrate == 0 or miner_data.center_board_hashrate == 0 or miner_data.right_board_hashrate == 0:
+                        logger.logger.info(f" lower than expected hashrate on {miner_data.hostname} one of the HBs is not working")
+                miner_wattage = int(miner_data.wattage) if int(miner_data.wattage) > 0 else 2850
+                miner_efficiency = int(miner_data.efficiency) if int(miner_data.efficiency) > 0 else (2850/(miner_hashrate))
+            else:
+                miner_wattage = 0
+                miner_efficiency = 0
+            total_hashrate = total_hashrate + miner_hashrate
+            total_power = total_power + miner_wattage
             try:
-                logger.logger.debug(f"{miner_data.hostname}: {miner_data.hashrate}TH @ {miner_data.temperature_avg} ˚C {round(miner_data.wattage/1000, 2)} KW at {round(miner_data.efficiency, 2)} W/TH efficiency")
+                logger.logger.debug(f"{miner_data.hostname}: {miner_hashrate}TH @ {miner_data.temperature_avg} ˚C {round(miner_wattage/1000, 2)} KW at {round(miner_efficiency, 2)} W/TH efficiency")
                 if int(miner_data.hashrate) > 0:
                     online_miners.append(miner_data.ip)
                 else:
                     offline_miners.append(miner_data.ip)
             except Exception as e:
-                logger.logger.info(f" failed with error {e}")
-        logger.logger.info(f" we have {len(online_miners)} active miners with a total hashrate of {round(total_hashrate, 2)}TH with a total power of {round(total_power/1000, 2)}KW")
+                logger.logger.error(f" failed with error {e}")
+        logger.logger.info(f" we have {len(online_miners)} active miners with a total hashrate of {round(total_hashrate, 2)}TH with a total power of {round(total_power/1000, 2)}KW and an average efficiency of {round(total_power/total_hashrate, 2)}W/TH")
     except Exception as e:
         lock.release()
-        logger.logger.info(f" failed with error {e}")
+        logger.logger.error(f" failed with error {e}")
     finally:
         updated_at = int(time.time())
         lock.release()
@@ -84,9 +94,9 @@ async def load_shifting(miners, payload):
                                         logger.logger.info(" Nothing to do right now")
                                     return         
                         except Exception as e:
-                            logger.logger.info(f" failed with error {e}")
+                            logger.logger.error(f" failed with error {e}")
             except Exception as e:
-                logger.logger.info(f" failed with error {e}")
+                logger.logger.error(f" failed with error {e}")
         if power - buffer < 0 and abs(power) > buffer and len(offline_miners) > 0:
             num_miners_to_start = math.floor(abs(power + buffer) / miner_avg_kw)
             logger.logger.debug(f" these are our online miners {online_miners}")
@@ -117,9 +127,9 @@ async def load_shifting(miners, payload):
                                         logger.logger.info(" Nothing to do right now")
                                     return         
                         except Exception as e:
-                            logger.logger.info(f" failed with error {e}")
+                            logger.logger.error(f" failed with error {e}")
             except Exception as e:
-                logger.logger.info(f" failed with error {e}")
+                logger.logger.error(f" failed with error {e}")
         else:
             logger.logger.info(" Nothing to do right now")
             pass
