@@ -27,7 +27,8 @@ async def get_miners():
         # logger.logger.info(f" successfully connected to {len(miners)} miners")
         logger.logger.debug(f"{miners}")
         await manager.get_miner_data(miners)
-        await asyncio.sleep(60)
+        await manager.load_shifting(miners)
+        await asyncio.sleep(sleep_duration)
 
 if __name__ == '__main__':
     while True:
@@ -39,12 +40,12 @@ if __name__ == '__main__':
                 logger.logger.info("Starting subscriber and publisher")
                 init_miners = loop.create_task(get_miners())
                 client_publisher = loop.create_task(client.measurement_publisher(credentials['username'], credentials['password'], ssl))
-                client_listner = loop.create_task(client.start_client(credentials['username'], credentials['password'], miners, ssl))
+                client_listner = loop.create_task(client.start_client(credentials['username'], credentials['password'], ssl))
                 tasks = asyncio.gather(broker_task, client_publisher, client_listner,init_miners)
             else:
                 logger.logger.info("Starting subscriber only")
                 init_miners = loop.create_task(get_miners())
-                client_listner = loop.create_task(client.start_client(credentials['username'], credentials['password'], miners, ssl))
+                client_listner = loop.create_task(client.start_client(credentials['username'], credentials['password'], ssl))
                 tasks = asyncio.gather(broker_task, client_listner,init_miners)
             signal.signal(signal.SIGINT, signal_handler)
             logger.logger.info("started. Press Ctrl+C to stop.")

@@ -9,6 +9,11 @@ logging_level = "INFO"
 # to use and not go crazy about stopping and starting miners
 buffer = 10
 
+
+# sleep duration between checks, recommended 5 mins (300 secs)
+sleep_duration = 300
+
+
 # this is the average power for 1 miner afer optemization
 # we use this to calculate the amount of miners we need to start/stop
 miner_avg_kw = 2.5

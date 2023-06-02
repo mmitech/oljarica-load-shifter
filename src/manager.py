@@ -1,13 +1,19 @@
-import asyncio, math, threading, time
+import asyncio, math, threading, time, json
 from . import logger
 from config import *
 
 lock = threading.Lock()
 online_miners = []
 offline_miners = []
+broker_payload = {}
 total_hashrate = 0
 total_power = 0
 updated_at = 0
+
+async def broker_messages(topic, payload):
+    logger.logger.info(f" got a new message reading, updating our payload")
+    broker_payload.clear()
+    broker_payload.update(payload)
 
 def find_miner_index(dict, search_miner):
     for index, value in enumerate(dict):
@@ -57,17 +63,23 @@ async def get_miner_data(miners):
         updated_at = int(time.time())
         lock.release()
 
-async def load_shifting(miners, payload):
+async def load_shifting(miners):
+    lock.acquire()
+    lock.release()
     global online_miners
     global offline_miners
     global total_hashrate
     global total_power
+    global broker_payload
     global updated_at
+    logger.logger.debug(f" payload: {broker_payload}")
     if (int(time.time()) - updated_at) > 3600:
         logger.logger.info(f" our data is older than 1 hour, trying to get new data")
         get_miner_data(miners)
+    elif not broker_payload:
+        logger.logger.info(f" no messages received yet")
     else:
-        power = payload["value"]
+        power = broker_payload["value"]
         if power - buffer > 0 and len(online_miners) > 0:
             num_miners_to_pause = math.ceil((power - buffer) / miner_avg_kw)
             logger.logger.debug(f" these are our offline miners {offline_miners}")
@@ -84,6 +96,7 @@ async def load_shifting(miners, payload):
                                     stop_miner = await miners[miner].stop_mining()
                                     if stop_miner:
                                         logger.logger.info(f" successfully paused {device}")
+                                        offline_miners.append(miners[miner].ip)
                                         num_miners_stopped += 1
                                     else:
                                         logger.logger.info(f" couldn't stop {device}")
@@ -116,6 +129,7 @@ async def load_shifting(miners, payload):
                                         logger.logger.info(f" power limit was successfully set on {device}")
                                     resume_miner = await miners[miner].resume_mining()
                                     if resume_miner:
+                                        
                                         logger.logger.info(f" successfully resumed {device}")
                                         num_miners_started += 1
                                     else:

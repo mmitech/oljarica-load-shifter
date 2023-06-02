@@ -1,12 +1,11 @@
-import asyncio
-import json
+import asyncio, json
 from config import power_topic
 from . import logger, manager
 from hbmqtt.client import MQTTClient, ClientException
 from hbmqtt.mqtt.constants import QOS_1
 
 
-async def start_client(username, password, miners, ssl):
+async def start_client(username, password, ssl):
     config = {
         'keep_alive': 5,
         'ping_delay': 1,
@@ -28,7 +27,7 @@ async def start_client(username, password, miners, ssl):
             logger.logger.debug(f" received message - Topic: {topic}, Payload: {payload}")
             # Call a function to process the received measurement event
             payload = json.loads(payload)
-            await process_measurement(topic, payload, miners)
+            await process_measurement(topic, payload)
     except ClientException as ce:
         logger.logger.error(" client exception: %s", ce)
     except KeyboardInterrupt:
@@ -63,8 +62,8 @@ async def measurement_publisher(username, password, ssl):
         await client.disconnect()
 
 
-async def process_measurement(topic, payload, miners):
-    await manager.load_shifting(miners, payload)
+async def process_measurement(topic, payload):
+    await manager.broker_messages(topic, payload)
     
 
     
