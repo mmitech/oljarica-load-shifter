@@ -3,26 +3,29 @@ from config import *
 import sys, signal, asyncio, json, time
 from pyasic import get_miner
 
-miners = []
-
 # keyboard signal to end the loops
 def signal_handler(signal, frame):
     logger.logger.info("\nprogram exiting gracefully")
     sys.exit(0)
+    
+miners = []
 
 # init the miners API
-async def get_miners():  
-    logger.logger.info("connecting to mniners")
-    for shelf, devices in miners_ips.items():
-        for device, ip in devices.items():
-            try:
-                logger.logger.info(f" Trying to init {device} with IP: {ip}")
-                miner =  await get_miner(ip)
-                miners.append(miner)
-            except Exception as e:
-                logger.logger.info(f"failed with error {e}")
-    logger.logger.debug(f"{miners}")
+async def get_miners():
+    global miners
     while True:
+        miners.clear()
+        logger.logger.info("connecting to mniners")
+        for shelf, devices in miners_ips.items():
+            for device, ip in devices.items():
+                try:
+                    logger.logger.debug(f" Trying to init {device} with IP: {ip}")
+                    miner =  await get_miner(ip)
+                    miners.append(miner)
+                except Exception as e:
+                    logger.logger.error(f"failed with error {e}")
+        logger.logger.info(f" successfully connected to {len(miners)} miners")
+        logger.logger.debug(f"{miners}")
         await manager.get_miner_data(miners)
         await asyncio.sleep(60)
 

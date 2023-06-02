@@ -22,8 +22,8 @@ async def get_miner_data(miners):
     global total_hashrate
     global total_power
     global updated_at
-    online_miners = []
-    offline_miners = []
+    online_miners.clear()
+    offline_miners.clear()
     total_hashrate = 0
     total_power = 0
     try:
