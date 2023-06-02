@@ -30,28 +30,33 @@ async def get_miners():
         await asyncio.sleep(60)
 
 if __name__ == '__main__':
-    try:
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
-        broker_task = loop.create_task(broker.start_broker(ssl))
-        if publish:
-            logger.logger.info("Starting subscriber and publisher")
-            init_miners = loop.create_task(get_miners())
-            client_publisher = loop.create_task(client.measurement_publisher(credentials['username'], credentials['password'], ssl))
-            client_listner = loop.create_task(client.start_client(credentials['username'], credentials['password'], miners, ssl))
-            tasks = asyncio.gather(broker_task, client_publisher, client_listner,init_miners)
-        else:
-            logger.logger.info("Starting subscriber only")
-            init_miners = loop.create_task(get_miners())
-            client_listner = loop.create_task(client.start_client(credentials['username'], credentials['password'], miners, ssl))
-            tasks = asyncio.gather(broker_task, client_listner,init_miners)
-        signal.signal(signal.SIGINT, signal_handler)
-        logger.logger.info("started. Press Ctrl+C to stop.")
-        loop.run_forever()
-    except KeyboardInterrupt:
-        broker_task.cancel()
-        client_listner.cancel()
-        if publish:
-            client_publisher.cancel()
-        loop.stop
-        logger.logger.info("MQTT broker stopped.")
+    while True:
+        try:
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+            broker_task = loop.create_task(broker.start_broker(ssl))
+            if publish:
+                logger.logger.info("Starting subscriber and publisher")
+                init_miners = loop.create_task(get_miners())
+                client_publisher = loop.create_task(client.measurement_publisher(credentials['username'], credentials['password'], ssl))
+                client_listner = loop.create_task(client.start_client(credentials['username'], credentials['password'], miners, ssl))
+                tasks = asyncio.gather(broker_task, client_publisher, client_listner,init_miners)
+            else:
+                logger.logger.info("Starting subscriber only")
+                init_miners = loop.create_task(get_miners())
+                client_listner = loop.create_task(client.start_client(credentials['username'], credentials['password'], miners, ssl))
+                tasks = asyncio.gather(broker_task, client_listner,init_miners)
+            signal.signal(signal.SIGINT, signal_handler)
+            logger.logger.info("started. Press Ctrl+C to stop.")
+            loop.run_forever()
+        except KeyboardInterrupt:
+            broker_task.cancel()
+            client_listner.cancel()
+            if publish:
+                client_publisher.cancel()
+            loop.stop
+            logger.logger.info("MQTT broker stopped.")
+        except Exception as e:
+            logger.logger.error(f"An error occurred: {e}")
+            logger.logger.info("Restarting in 5 seconds...")
+            time.sleep(5)
