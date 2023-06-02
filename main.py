@@ -15,7 +15,7 @@ async def get_miners():
     global miners
     while True:
         miners.clear()
-        logger.logger.info("connecting to mniners")
+        logger.logger.info(" connecting to miners")
         for shelf, devices in miners_ips.items():
             for device, ip in devices.items():
                 try:
@@ -24,7 +24,7 @@ async def get_miners():
                     miners.append(miner)
                 except Exception as e:
                     logger.logger.error(f"failed with error {e}")
-        logger.logger.info(f" successfully connected to {len(miners)} miners")
+        # logger.logger.info(f" successfully connected to {len(miners)} miners")
         logger.logger.debug(f"{miners}")
         await manager.get_miner_data(miners)
         await asyncio.sleep(60)
