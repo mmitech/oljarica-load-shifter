@@ -15,7 +15,7 @@ async def get_miners():
     global miners
     while True:
         miners.clear()
-        logger.logger.info(" connecting to miners")
+        logger.logger.debug(" connecting to miners")
         for shelf, devices in miners_ips.items():
             for device, ip in devices.items():
                 try:
