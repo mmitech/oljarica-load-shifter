@@ -26,9 +26,14 @@ async def get_miners():
                     logger.logger.error(f"failed with error {e}")
         # logger.logger.info(f" successfully connected to {len(miners)} miners")
         logger.logger.debug(f"{miners}")
-        await manager.get_miner_data(miners)
-        await manager.load_shifting(miners)
-        await asyncio.sleep(sleep_duration)
+        try:
+            await manager.get_miner_data(miners)
+            await manager.load_shifting(miners)
+            await asyncio.sleep(sleep_duration)
+        except Exception as e:
+            logger.logger.error(f"An error occurred: {e}")
+            logger.logger.info("Restarting in 5 seconds...")
+            time.sleep(5)  
 
 if __name__ == '__main__':
     while True:
