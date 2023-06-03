@@ -106,7 +106,7 @@ async def load_shifting(miners):
                                         if num_miners_to_pause > 0 and num_miners_stopped == num_miners_to_pause:
                                             logger.logger.info(f" successfully paused {num_miners_to_pause} miners")
                                         elif num_miners_to_pause == 0:
-                                            logger.logger.info(" Nothing to do right now")
+                                            logger.logger.info(" nothing to do right now")
                                         return         
                             except Exception as e:
                                 logger.logger.error(f" failed with error {e}")
@@ -140,7 +140,7 @@ async def load_shifting(miners):
                                         if num_miners_to_start > 0 and num_miners_started == num_miners_to_start:
                                             logger.logger.info(f" successfully resumed {num_miners_to_start} miners")
                                         elif num_miners_to_start == 0:
-                                            logger.logger.info(" Nothing to do right now")
+                                            logger.logger.info(" nothing to do right now")
                                         return         
                             except Exception as e:
                                 logger.logger.error(f" failed with error {e}")
@@ -148,7 +148,7 @@ async def load_shifting(miners):
                     logger.logger.error(f" failed with error {e}")
             else:
                 condition.notify()
-                logger.logger.debug(" Nothing to do right now")
+                logger.logger.debug(" nothing to do right now")
                 pass
             condition.notify()
         condition.notify()
