@@ -7,14 +7,17 @@ condition = threading.Condition(lock)
 online_miners = []
 offline_miners = []
 broker_payload = {}
+processed = False
 total_hashrate = 0
 total_power = 0
 updated_at = 0
 
 async def broker_messages(topic, payload):
+    global processed
     logger.logger.info(f" got a new message reading, updating our payload")
     broker_payload.clear()
     broker_payload.update(payload)
+    processed = False
 
 def find_miner_index(dict, search_miner):
     for index, value in enumerate(dict):
@@ -24,11 +27,7 @@ def find_miner_index(dict, search_miner):
 
 async def get_miner_data(miners):
     with lock:
-        global online_miners
-        global offline_miners
-        global total_hashrate
-        global total_power
-        global updated_at
+        global online_miners, offline_miners, total_hashrate, total_power, broker_payload, updated_at
         online_miners.clear()
         offline_miners.clear()
         total_hashrate = 0
@@ -66,87 +65,100 @@ async def get_miner_data(miners):
 
 async def load_shifting(miners):
     with lock:
-        global online_miners
-        global offline_miners
-        global total_hashrate
-        global total_power
-        global broker_payload
-        global updated_at
+        global online_miners, offline_miners, total_hashrate, total_power, broker_payload, updated_at, processed
         logger.logger.debug(f" payload: {broker_payload}")
-        if (int(time.time()) - updated_at) > 3600:
-            logger.logger.info(f" our data is older than 1 hour, trying to get new data")
-            condition.notify()
-            get_miner_data(miners)
-        elif not broker_payload:
-            condition.notify()
-            logger.logger.info(f" no messages received yet")
-        else:
-            power = broker_payload["value"]
-            if power - buffer > 0 and len(online_miners) > 0:
-                num_miners_to_pause = math.ceil((power - buffer) / miner_avg_kw)
-                logger.logger.debug(f" these are our offline miners {offline_miners}")
-                if num_miners_to_pause > 0:
-                    logger.logger.info(f" we need to pause {num_miners_to_pause} miner(s)")
-                num_miners_stopped = 0
-                try:
-                    for device, ip in miners_ips.items():
-                        try:
-                            if ip in online_miners:
-                                miner = find_miner_index(miners, ip)
-                                if miner is not None and num_miners_to_pause > 0 and num_miners_stopped != num_miners_to_pause:
-                                    stop_miner = await miners[miner].stop_mining()
-                                    if stop_miner:
-                                        logger.logger.info(f" successfully paused {device}")
-                                        offline_miners.append(miners[miner].ip)
-                                        num_miners_stopped += 1
-                                    else:
-                                        logger.logger.info(f" couldn't stop {device}")
-                                else:
-                                    if num_miners_to_pause > 0 and num_miners_stopped == num_miners_to_pause:
-                                        logger.logger.info(f" successfully paused {num_miners_to_pause} miners")
-                                    elif num_miners_to_pause == 0:
-                                        logger.logger.info(" nothing to do right now")
-                                    return         
-                        except Exception as e:
-                            logger.logger.error(f" failed with error {e}")
-                except Exception as e:
-                    logger.logger.error(f" failed with error {e}")
-            if power - buffer < 0 and abs(power) > buffer and len(offline_miners) > 0:
-                num_miners_to_start = math.floor(abs(power + buffer) / miner_avg_kw)
-                logger.logger.debug(f" these are our online miners {online_miners}")
-                logger.logger.debug(f" these are our offline miners {offline_miners}")
-                if num_miners_to_start > 0:
-                    logger.logger.info(f" we need to start {num_miners_to_start} miner(s)")
-                num_miners_started = 0
-                try:
-                    for device, ip in miners_ips.items():
-                        try:
-                            if ip in offline_miners:
-                                miner = find_miner_index(miners, ip)
-                                if miner is not None and num_miners_to_start > 0 and num_miners_started != num_miners_to_start:
-                                    power_limit = await miners[miner].set_power_limit(2500)
-                                    if power_limit:
-                                        logger.logger.info(f" power limit was successfully set on {device}")
-                                    resume_miner = await miners[miner].resume_mining()
-                                    if resume_miner:
-                                        
-                                        logger.logger.info(f" successfully resumed {device}")
-                                        num_miners_started += 1
-                                    else:
-                                        logger.logger.info(f" couldn't resume {device}")
-                                else:
-                                    if num_miners_to_start > 0 and num_miners_started == num_miners_to_start:
-                                        logger.logger.info(f" successfully resumed {num_miners_to_start} miners")
-                                    elif num_miners_to_start == 0:
-                                        logger.logger.info(" nothing to do right now")
-                                    return         
-                        except Exception as e:
-                            logger.logger.error(f" failed with error {e}")
-                except Exception as e:
-                    logger.logger.error(f" failed with error {e}")
-            else:
+        if not processed:
+            if (int(time.time()) - updated_at) > 3600:
+                logger.logger.info(f" our data is older than 1 hour, trying to get new data")
                 condition.notify()
-                logger.logger.debug(" nothing to do right now")
-                pass
+                get_miner_data(miners)
+            elif not broker_payload:
+                condition.notify()
+                logger.logger.info(f" no messages received yet")
+            else:
+                power = broker_payload["value"]
+                if power - buffer > 0 and len(online_miners) > 0:
+                    num_miners_to_pause = math.ceil((power - buffer) / miner_avg_kw)
+                    logger.logger.debug(f" these are our offline miners {offline_miners}")
+                    if num_miners_to_pause > 0:
+                        logger.logger.info(f" we need to pause {num_miners_to_pause} miner(s)")
+                    num_miners_stopped = 0
+                    try:
+                        for device, ip in miners_ips.items():
+                            try:
+                                if ip in online_miners:
+                                    miner = find_miner_index(miners, ip)
+                                    if miner is not None and num_miners_to_pause > 0 and num_miners_stopped != num_miners_to_pause:
+                                        stop_miner = await miners[miner].stop_mining()
+                                        if stop_miner:
+                                            logger.logger.info(f" successfully paused {device}")
+                                            broker_payload["value"] = broker_payload["value"] - miner_avg_kw
+                                            num_miners_stopped += 1
+                                        else:
+                                            stop_miner = await miners[miner].api.send_command("pause")
+                                            if resume_miner["PAUSE"]:
+                                                broker_payload["value"] = broker_payload["value"] - miner_avg_kw
+                                                logger.logger.info(f" successfully paused {device}")
+                                                num_miners_stopped += 1
+                                            else:
+                                                logger.logger.info(f" couldn't stop {device}")
+                                    else:
+                                        if num_miners_to_pause > 0 and num_miners_stopped == num_miners_to_pause:
+                                            processed = True
+                                            logger.logger.info(f" successfully paused {num_miners_to_pause} miners")
+                                        elif num_miners_to_pause == 0:
+                                            logger.logger.info(" nothing to do right now")
+                                        return         
+                            except Exception as e:
+                                logger.logger.error(f" failed with error {e}")
+                    except Exception as e:
+                        logger.logger.error(f" failed with error {e}")
+                if power - buffer < 0 and abs(power) > buffer and len(offline_miners) > 0:
+                    num_miners_to_start = math.floor(abs(power + buffer) / miner_avg_kw)
+                    logger.logger.debug(f" these are our online miners {online_miners}")
+                    logger.logger.debug(f" these are our offline miners {offline_miners}")
+                    if num_miners_to_start > 0:
+                        logger.logger.info(f" we need to start {num_miners_to_start} miner(s)")
+                    num_miners_started = 0
+                    try:
+                        for device, ip in miners_ips.items():
+                            try:
+                                if ip in offline_miners:
+                                    miner = find_miner_index(miners, ip)
+                                    if miner is not None and num_miners_to_start > 0 and num_miners_started != num_miners_to_start:
+                                        power_limit = await miners[miner].set_power_limit(2500)
+                                        if power_limit:
+                                            logger.logger.info(f" power limit was successfully set on {device}")
+                                        resume_miner = await miners[miner].resume_mining()
+                                        if resume_miner:
+                                            broker_payload["value"] = broker_payload["value"] + miner_avg_kw
+                                            logger.logger.info(f" successfully resumed {device}")
+                                            num_miners_started += 1
+                                        else:
+                                            resume_miner = await miners[miner].api.send_command("resume")
+                                            if resume_miner["RESUME"]:
+                                                broker_payload["value"] = broker_payload["value"] + miner_avg_kw
+                                                logger.logger.info(f" successfully resumed {device}")
+                                                num_miners_started += 1 
+                                            else:
+                                                logger.logger.info(f" couldn't resume {device}")
+                                    else:
+                                        if num_miners_to_start > 0 and num_miners_started == num_miners_to_start:
+                                            processed = True
+                                            logger.logger.info(f" successfully resumed {num_miners_to_start} miners")
+                                        elif num_miners_to_start == 0:
+                                            logger.logger.info(" nothing to do right now")
+                                        return         
+                            except Exception as e:
+                                logger.logger.error(f" failed with error {e}")
+                    except Exception as e:
+                        logger.logger.error(f" failed with error {e}")
+                else:
+                    condition.notify()
+                    logger.logger.debug(" nothing to do right now")
+                    pass
+                condition.notify()
             condition.notify()
-        condition.notify()
+        else:
+            condition.notify()
+            logger.logger.debug(" measurement already processed")
