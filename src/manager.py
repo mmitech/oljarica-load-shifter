@@ -89,27 +89,26 @@ async def load_shifting(miners):
                     logger.logger.info(f" we need to pause {num_miners_to_pause} miner(s)")
                 num_miners_stopped = 0
                 try:
-                    for shelf, devices in miners_ips.items():
-                        for device, ip in devices.items():
-                            try:
-                                if ip in online_miners:
-                                    miner = find_miner_index(miners, ip)
-                                    if miner is not None and num_miners_to_pause > 0 and num_miners_stopped != num_miners_to_pause:
-                                        stop_miner = await miners[miner].stop_mining()
-                                        if stop_miner:
-                                            logger.logger.info(f" successfully paused {device}")
-                                            offline_miners.append(miners[miner].ip)
-                                            num_miners_stopped += 1
-                                        else:
-                                            logger.logger.info(f" couldn't stop {device}")
+                    for device, ip in miners_ips.items():
+                        try:
+                            if ip in online_miners:
+                                miner = find_miner_index(miners, ip)
+                                if miner is not None and num_miners_to_pause > 0 and num_miners_stopped != num_miners_to_pause:
+                                    stop_miner = await miners[miner].stop_mining()
+                                    if stop_miner:
+                                        logger.logger.info(f" successfully paused {device}")
+                                        offline_miners.append(miners[miner].ip)
+                                        num_miners_stopped += 1
                                     else:
-                                        if num_miners_to_pause > 0 and num_miners_stopped == num_miners_to_pause:
-                                            logger.logger.info(f" successfully paused {num_miners_to_pause} miners")
-                                        elif num_miners_to_pause == 0:
-                                            logger.logger.info(" nothing to do right now")
-                                        return         
-                            except Exception as e:
-                                logger.logger.error(f" failed with error {e}")
+                                        logger.logger.info(f" couldn't stop {device}")
+                                else:
+                                    if num_miners_to_pause > 0 and num_miners_stopped == num_miners_to_pause:
+                                        logger.logger.info(f" successfully paused {num_miners_to_pause} miners")
+                                    elif num_miners_to_pause == 0:
+                                        logger.logger.info(" nothing to do right now")
+                                    return         
+                        except Exception as e:
+                            logger.logger.error(f" failed with error {e}")
                 except Exception as e:
                     logger.logger.error(f" failed with error {e}")
             if power - buffer < 0 and abs(power) > buffer and len(offline_miners) > 0:
@@ -120,30 +119,29 @@ async def load_shifting(miners):
                     logger.logger.info(f" we need to start {num_miners_to_start} miner(s)")
                 num_miners_started = 0
                 try:
-                    for shelf, devices in miners_ips.items():
-                        for device, ip in devices.items():
-                            try:
-                                if ip in offline_miners:
-                                    miner = find_miner_index(miners, ip)
-                                    if miner is not None and num_miners_to_start > 0 and num_miners_started != num_miners_to_start:
-                                        power_limit = await miners[miner].set_power_limit(2500)
-                                        if power_limit:
-                                            logger.logger.info(f" power limit was successfully set on {device}")
-                                        resume_miner = await miners[miner].resume_mining()
-                                        if resume_miner:
-                                            
-                                            logger.logger.info(f" successfully resumed {device}")
-                                            num_miners_started += 1
-                                        else:
-                                            logger.logger.info(f" couldn't resume {device}")
+                    for device, ip in miners_ips.items():
+                        try:
+                            if ip in offline_miners:
+                                miner = find_miner_index(miners, ip)
+                                if miner is not None and num_miners_to_start > 0 and num_miners_started != num_miners_to_start:
+                                    power_limit = await miners[miner].set_power_limit(2500)
+                                    if power_limit:
+                                        logger.logger.info(f" power limit was successfully set on {device}")
+                                    resume_miner = await miners[miner].resume_mining()
+                                    if resume_miner:
+                                        
+                                        logger.logger.info(f" successfully resumed {device}")
+                                        num_miners_started += 1
                                     else:
-                                        if num_miners_to_start > 0 and num_miners_started == num_miners_to_start:
-                                            logger.logger.info(f" successfully resumed {num_miners_to_start} miners")
-                                        elif num_miners_to_start == 0:
-                                            logger.logger.info(" nothing to do right now")
-                                        return         
-                            except Exception as e:
-                                logger.logger.error(f" failed with error {e}")
+                                        logger.logger.info(f" couldn't resume {device}")
+                                else:
+                                    if num_miners_to_start > 0 and num_miners_started == num_miners_to_start:
+                                        logger.logger.info(f" successfully resumed {num_miners_to_start} miners")
+                                    elif num_miners_to_start == 0:
+                                        logger.logger.info(" nothing to do right now")
+                                    return         
+                        except Exception as e:
+                            logger.logger.error(f" failed with error {e}")
                 except Exception as e:
                     logger.logger.error(f" failed with error {e}")
             else:

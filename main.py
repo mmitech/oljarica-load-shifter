@@ -16,16 +16,15 @@ async def get_miners():
     while True:
         miners.clear()
         logger.logger.debug(" connecting to miners")
-        for shelf, devices in miners_ips.items():
-            for device, ip in devices.items():
-                try:
-                    logger.logger.debug(f" trying to init {device} with IP: {ip}")
-                    miner =  await get_miner(ip)
-                    miners.append(miner)
-                except Exception as e:
-                    logger.logger.error(f"failed with error {e}")
-        # logger.logger.info(f" successfully connected to {len(miners)} miners")
+        for device, ip in miners_ips.items():
+            try:
+                logger.logger.debug(f" trying to init {device} with IP: {ip}")
+                miner =  await get_miner(ip)
+                miners.append(miner)
+            except Exception as e:
+                logger.logger.error(f"failed with error {e}")
         logger.logger.debug(f"{miners}")
+        logger.logger.debug(f" conected to: {len(miners)} miners")
         try:
             await manager.get_miner_data(miners)
             await manager.load_shifting(miners)
