@@ -46,8 +46,8 @@ async def measurement_publisher(username, password, ssl):
         while True:
             measurement = {
                 'sensor_id': 1,
-                'value': 25.5 + round,
-                'unit': 'Celsius'
+                'value': 10 + round,
+                'unit': 'KW'
             }
             payload = json.dumps(measurement).encode()
             await client.publish(power_topic, payload, QOS_1, retain=True)
