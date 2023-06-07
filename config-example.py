@@ -2,21 +2,22 @@
 publish = False
 
 #logging level (DEBUG, INFO, ERROR)
-logging_level = "INFO"
+logging_level = "DEBUG"
+
+#Hourly limited mining
+manual_reading = True
 
 # The hydro power plant power produced is not constant, 
 # it jumps up and down every second, we give our algo a buffer
 # to use and not go crazy about stopping and starting miners
 buffer = 10
 
-
 # sleep duration between checks, recommended 5 mins (300 secs)
-sleep_duration = 300
-
+sleep_duration = 60
 
 # this is the average power for 1 miner afer optemization
 # we use this to calculate the amount of miners we need to start/stop
-miner_avg_kw = 2.5
+miner_avg_kw = 2.6
 
 # Broker credentials
 credentials = {

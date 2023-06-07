@@ -1,6 +1,6 @@
-from src import broker, client, logger, manager
+from src import broker, client, logger, manager, hourly
 from config import *
-import sys, signal, asyncio, json, time
+import sys, signal, asyncio, json, datetime, time
 from pyasic import get_miner
 
 # keyboard signal to end the loops
@@ -27,6 +27,9 @@ async def get_miners():
         logger.logger.debug(f" conected to: {len(miners)} miners")
         try:
             await manager.get_miner_data(miners)
+            if manual_reading:
+                current_time = datetime.datetime.now().time()
+                await hourly.manual_process(True, current_time, credentials['username'], credentials['password'])
             await manager.load_shifting(miners)
             await asyncio.sleep(sleep_duration)
         except Exception as e:
