@@ -11,7 +11,7 @@ async def manual_process(manual_reading, current_time, username, password):
         try:
             await client.connect(f'mqtt://{username}:{password}@127.0.0.1:1883')
             # await client.connect(f'mqtts://{username}:{password}@broker.mmitech.info/', cafile={ssl['crt']})
-            logger.logger.info(" measurement publisher connected")
+            logger.logger.debug(" measurement publisher connected")
             measurement = {
                 'sensor_id': 1,
                 'value': -150,
@@ -20,7 +20,7 @@ async def manual_process(manual_reading, current_time, username, password):
             payload = json.dumps(measurement).encode()
             await client.publish(power_topic, payload, QOS_1, retain=True)
             logger.logger.debug(f" publisher: payload= {payload}")
-            logger.logger.info(" published measurement Sleeping ")
+            logger.logger.debug(" published measurement Sleeping ")
         except ClientException as ce:
             await client.disconnect()
             logger.logger.error(" client exception: %s", ce)
@@ -31,7 +31,7 @@ async def manual_process(manual_reading, current_time, username, password):
         try:
             await client.connect(f'mqtt://{username}:{password}@127.0.0.1:1883')
             # await client.connect(f'mqtts://{username}:{password}@broker.mmitech.info/', cafile={ssl['crt']})
-            logger.logger.info(" measurement publisher connected")
+            logger.logger.debug(" measurement publisher connected")
             measurement = {
                 'sensor_id': 1,
                 'value': 150,
@@ -40,7 +40,7 @@ async def manual_process(manual_reading, current_time, username, password):
             payload = json.dumps(measurement).encode()
             await client.publish(power_topic, payload, QOS_1, retain=True)
             logger.logger.debug(f" publisher: payload= {payload}")
-            logger.logger.info(" published measurement Sleeping ")
+            logger.logger.debug(" published measurement Sleeping ")
         except ClientException as ce:
             await client.disconnect()
             logger.logger.error(" client exception: %s", ce)

@@ -14,7 +14,7 @@ updated_at = 0
 
 async def broker_messages(topic, payload):
     global processed
-    logger.logger.info(f" got a new message reading, updating our payload")
+    logger.logger.debug(f" got a new message reading, updating our payload")
     broker_payload.clear()
     broker_payload.update(payload)
     processed = False
@@ -77,7 +77,7 @@ async def load_shifting(miners):
                 get_miner_data(miners)
             elif not broker_payload:
                 condition.notify()
-                logger.logger.info(f" no messages received yet")
+                logger.logger.debug(f" no messages received yet")
             else:
                 power = broker_payload["value"]
                 if power - buffer > 0 and len(online_miners) > 0:
