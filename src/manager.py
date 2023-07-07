@@ -15,9 +15,13 @@ updated_at = 0
 async def broker_messages(topic, payload):
     global processed
     logger.logger.debug(f" got a new message reading, updating our payload")
-    broker_payload.clear()
-    broker_payload.update(payload)
-    processed = False
+    for readout in payload["values"]:
+        if readout["dataTypeEnum"] == "POWER_ACTIVE":   
+            readout["value"] = round(readout["value"]/1000, 2)
+            broker_payload.clear()
+            broker_payload.update(readout)
+            processed = False
+            return
 
 def find_miner_index(dict, search_miner):
     for index, value in enumerate(dict):

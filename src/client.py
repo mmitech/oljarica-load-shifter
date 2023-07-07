@@ -16,6 +16,7 @@ async def start_client(username, password, ssl):
     try:
         await client.connect(f'mqtt://{username}:{password}@127.0.0.1:1883')
         # await client.connect(f'mqtts://{username}:{password}@broker.mmitech.info/', cafile={ssl['crt']})
+        # await client.connect(f'mqtt://{username}:{password}@broker.mmitech.info/')
         logger.logger.info(" measurement listener connected")
         await client.subscribe([(power_topic, QOS_1)])
         logger.logger.info(" measurement listener subscribed")
@@ -41,6 +42,7 @@ async def measurement_publisher(username, password, ssl):
     try:
         await client.connect(f'mqtt://{username}:{password}@127.0.0.1:1883')
         # await client.connect(f'mqtts://{username}:{password}@broker.mmitech.info/', cafile={ssl['crt']})
+        # await client.connect(f'mqtt://{username}:{password}@broker.mmitech.info/')
         logger.logger.info(" measurement publisher connected")
         round = 0
         while True:

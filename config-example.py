@@ -26,7 +26,7 @@ credentials = {
 }
 
 #topic to subscribe to
-power_topic = "controllers/readout"
+power_topic = "controllers/PQJ8-Q0JT-SHG4-B887/devices/60/readout"
 
 # SSL if MQTTS is used instead of MQTT
 ssl = {
