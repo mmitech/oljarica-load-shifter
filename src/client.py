@@ -14,9 +14,9 @@ async def start_client(username, password, ssl):
     await asyncio.sleep(2)
     client = MQTTClient(config=config)
     try:
-        await client.connect(f'mqtt://{username}:{password}@127.0.0.1:1883')
+        # await client.connect(f'mqtt://{username}:{password}@127.0.0.1:1883')
         # await client.connect(f'mqtts://{username}:{password}@broker.mmitech.info/', cafile={ssl['crt']})
-        # await client.connect(f'mqtt://{username}:{password}@broker.mmitech.info/')
+        await client.connect(f'mqtt://{username}:{password}@broker.mmitech.info/')
         logger.logger.info(" measurement listener connected")
         await client.subscribe([(power_topic, QOS_1)])
         logger.logger.info(" measurement listener subscribed")
@@ -35,34 +35,6 @@ async def start_client(username, password, ssl):
         await client.unsubscribe(["controllers/readout"])
         await client.disconnect()
         logger.logger.info(" stopped")
-
-async def measurement_publisher(username, password, ssl):
-    await asyncio.sleep(3)
-    client = MQTTClient()
-    try:
-        await client.connect(f'mqtt://{username}:{password}@127.0.0.1:1883')
-        # await client.connect(f'mqtts://{username}:{password}@broker.mmitech.info/', cafile={ssl['crt']})
-        # await client.connect(f'mqtt://{username}:{password}@broker.mmitech.info/')
-        logger.logger.info(" measurement publisher connected")
-        round = 0
-        while True:
-            measurement = {
-                'sensor_id': 1,
-                'value': 10 + round,
-                'unit': 'KW'
-            }
-            payload = json.dumps(measurement).encode()
-            await client.publish(power_topic, payload, QOS_1, retain=True)
-            logger.logger.debug(f" publisher: payload= {payload}")
-            logger.logger.info(" published measurement Sleeping for 10 secs")
-            round += 1
-            await asyncio.sleep(10)  # Publish data every 5 seconds
-    except ClientException as ce:
-        await client.disconnect()
-        logger.logger.error(" client exception: %s", ce)
-    finally:
-        await client.disconnect()
-
 
 async def process_measurement(topic, payload):
     await manager.broker_messages(topic, payload)

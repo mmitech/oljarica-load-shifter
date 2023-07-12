@@ -1,6 +1,6 @@
-from src import broker, client, logger, manager, hourly
+from src import broker, client, logger, manager
 from config import *
-import sys, signal, asyncio, json, datetime, time
+import sys, signal, asyncio, time
 from pyasic import get_miner
 
 # keyboard signal to end the loops
@@ -27,9 +27,6 @@ async def get_miners():
         logger.logger.debug(f" conected to: {len(miners)} miners")
         try:
             await manager.get_miner_data(miners)
-            if manual_reading:
-                current_time = datetime.datetime.now().time()
-                await hourly.manual_process(True, current_time, credentials['username'], credentials['password'])
             await manager.load_shifting(miners)
             await asyncio.sleep(sleep_duration)
         except Exception as e:
@@ -43,25 +40,16 @@ if __name__ == '__main__':
             loop = asyncio.new_event_loop()
             asyncio.set_event_loop(loop)
             broker_task = loop.create_task(broker.start_broker(ssl))
-            if publish:
-                logger.logger.info(" starting subscriber and publisher")
-                init_miners = loop.create_task(get_miners())
-                client_publisher = loop.create_task(client.measurement_publisher(credentials['username'], credentials['password'], ssl))
-                client_listner = loop.create_task(client.start_client(credentials['username'], credentials['password'], ssl))
-                tasks = asyncio.gather(broker_task, client_publisher, client_listner,init_miners)
-            else:
-                logger.logger.info(" starting subscriber only")
-                init_miners = loop.create_task(get_miners())
-                client_listner = loop.create_task(client.start_client(credentials['username'], credentials['password'], ssl))
-                tasks = asyncio.gather(broker_task, client_listner,init_miners)
+            logger.logger.info(" starting subscriber only")
+            init_miners = loop.create_task(get_miners())
+            client_listner = loop.create_task(client.start_client(credentials['username'], credentials['password'], ssl))
+            tasks = asyncio.gather(broker_task, client_listner,init_miners)
             signal.signal(signal.SIGINT, signal_handler)
             logger.logger.info(" started. Press Ctrl+C to stop.")
             loop.run_forever()
         except KeyboardInterrupt:
             broker_task.cancel()
             client_listner.cancel()
-            if publish:
-                client_publisher.cancel()
             loop.stop
             logger.logger.info(" MQTT broker stopped.")
         except Exception as e:

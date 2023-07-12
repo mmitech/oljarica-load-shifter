@@ -1,11 +1,13 @@
-# publish test data to the broker (used for teting the sumbscription and data processing)
-publish = False
-
 #logging level (DEBUG, INFO, ERROR)
 logging_level = "DEBUG"
 
-#Hourly limited mining
-manual_reading = True
+#Ignore readouts and mine all the time or period based time
+ignore_readout = True
+run_non_stop = True
+
+# if run_non_stop is true the value of start and and end hours will be ignored
+start_hour = 19
+stop_hour = 8
 
 # The hydro power plant power produced is not constant, 
 # it jumps up and down every second, we give our algo a buffer
