@@ -1,4 +1,4 @@
-import asyncio, math, threading, time, datetime
+import asyncio, math, threading, time, datetime, requests
 from . import logger
 from config import *
 
@@ -28,6 +28,22 @@ def find_miner_index(dict, search_miner):
         if search_miner in str(value):
             return index
     return None
+
+async def get_temperature(api_key, city):
+    base_url = "http://api.openweathermap.org/data/2.5/weather"
+    params = {
+        "q": city,
+        "units": "metric",  # Request temperature in Celsius
+        "appid": api_key
+    }
+    try:
+        response = requests.get(base_url, params=params)
+        data = response.json()
+        temperature = data["main"]["temp"]
+        return temperature
+    except requests.exceptions.RequestException as e:
+        print("Error fetching data:", e)
+        return None
 
 async def get_miner_data(miners):
     with lock:
@@ -79,19 +95,21 @@ async def load_shifting(miners):
         global online_miners, offline_miners, total_hashrate, total_power, broker_payload, updated_at, processed
         current_time = datetime.datetime.now().time()
         logger.logger.debug(f" payload: {broker_payload}")
-        if not processed:
+        if not processed or run_non_stop:
+            current_temperature = await get_temperature(API_key, location)
+            logger.logger.info(f" current temp in {location} is {current_temperature}˚C")
             if (int(time.time()) - updated_at) > 3600:
                 logger.logger.info(f" our data is older than 1 hour, trying to get new data")
                 condition.notify()
                 get_miner_data(miners)
-            elif not broker_payload:
+            elif not broker_payload and not ignore_readout:
                 condition.notify()
                 logger.logger.debug(f" no messages received yet")
             elif ignore_readout:
                 logger.logger.debug(f" ignoring conroller readouts")
-                if run_non_stop:
+                if run_non_stop and current_temperature < temp_halt_ambient:
                     if len(offline_miners) > 0:
-                        logger.logger.debug(f" all miners should run non stop")
+                        logger.logger.debug(f" current temp in {location} is {current_temperature}˚C which is less than {temp_halt_ambient}˚C so all miners should be running")
                         num_miners_to_start = len(offline_miners)
                         if num_miners_to_start > 0:
                             logger.logger.info(f" we need to start {num_miners_to_start} miner(s)")
@@ -132,6 +150,48 @@ async def load_shifting(miners):
                     else:
                         processed = True
                         logger.logger.info(f" all miners are online") 
+                elif run_non_stop and current_temperature > temp_halt_ambient:
+                    num_miners_to_pause = len(online_miners)
+                    logger.logger.debug(f" current temp in {location} is {current_temperature}˚C which is higher than {temp_halt_ambient}˚C")
+                    if num_miners_to_pause > 0:
+                        logger.logger.info(f" we need to pause {num_miners_to_pause} miner(s)")
+                        num_miners_stopped = 0
+                        try:
+                            for device, ip in miners_ips.items():
+                                try:
+                                    if ip in online_miners:
+                                        miner = find_miner_index(miners, ip)
+                                        if miner is not None and num_miners_stopped != num_miners_to_pause:
+                                            stop_miner = await miners[miner].stop_mining()
+                                            if stop_miner:
+                                                logger.logger.info(f" successfully paused {device}")
+                                                broker_payload["value"] = broker_payload["value"] - miner_avg_kw
+                                                offline_miners.append(miners[miner].ip)
+                                                index = find_miner_index(online_miners, miners[miner].ip)
+                                                online_miners.pop(index)
+                                                num_miners_stopped += 1
+                                            else:
+                                                stop_miner = await miners[miner].api.send_command("pause")
+                                                if stop_miner:
+                                                    logger.logger.info(f" successfully paused {device}")
+                                                    broker_payload["value"] = broker_payload["value"] - miner_avg_kw
+                                                    offline_miners.append(miners[miner].ip)
+                                                    index = find_miner_index(online_miners, miners[miner].ip)
+                                                    online_miners.pop(index)
+                                                    num_miners_stopped += 1
+                                                else:
+                                                    logger.logger.info(f" couldn't stop {device}")
+                                            if num_miners_stopped == num_miners_to_pause:
+                                                processed = True
+                                                logger.logger.info(f" successfully paused {num_miners_stopped} miners") 
+                                                return 
+                                except Exception as e:
+                                    logger.logger.error(f" failed with error {e}")    
+                        except Exception as e:
+                            logger.logger.error(f" failed with error {e}") 
+                    else:
+                        processed = True
+                        logger.logger.info(f" all miners are offline") 
                 elif not run_non_stop and current_time >= datetime.time(start_hour, 0) or current_time < datetime.time(stop_hour, 0) and len(offline_miners) > 0:
                     num_miners_to_start = len(offline_miners)
                     logger.logger.debug(f" ignoring conroller readouts miners should only run between {start_hour} and {stop_hour}")

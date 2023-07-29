@@ -2,12 +2,24 @@
 logging_level = "DEBUG"
 
 #Ignore readouts and mine all the time or period based time
+# Since we are using air cooled rigs and since these rigs produce a real high level of noise
+# have these rigs stop at a certain temperature to avoid noise complaints
 ignore_readout = True
 run_non_stop = True
+temp_halt_ambient = 30
+location = ""
+API_key = ""
 
 # if run_non_stop is true the value of start and and end hours will be ignored
 start_hour = 19
 stop_hour = 8
+
+# Since we are using air cooled rigs and since these rigs produce a real high level of noise
+# have these rigs stop at a certain temperature to avoid noise complaints
+temp_halt = True
+temp_halt_ambient = 20
+location = ""
+API_key = ""
 
 # The hydro power plant power produced is not constant, 
 # it jumps up and down every second, we give our algo a buffer
