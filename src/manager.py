@@ -122,7 +122,6 @@ async def load_shifting(miners):
                                             if miner is not None and num_miners_to_start > 0 and num_miners_started != num_miners_to_start:
                                                 resume_miner = await miners[miner].resume_mining()
                                                 if resume_miner:
-                                                    broker_payload["value"] = broker_payload["value"] + miner_avg_kw
                                                     online_miners.append(miners[miner].ip)
                                                     index = find_miner_index(offline_miners, miners[miner].ip)
                                                     offline_miners.pop(index)
@@ -131,7 +130,6 @@ async def load_shifting(miners):
                                                 else:
                                                     resume_miner = await miners[miner].api.send_command("resume")
                                                     if resume_miner:
-                                                        broker_payload["value"] = broker_payload["value"] + miner_avg_kw
                                                         online_miners.append(miners[miner].ip)
                                                         index = find_miner_index(offline_miners, miners[miner].ip)
                                                         offline_miners.pop(index)
@@ -165,7 +163,6 @@ async def load_shifting(miners):
                                             stop_miner = await miners[miner].stop_mining()
                                             if stop_miner:
                                                 logger.logger.info(f" successfully paused {device}")
-                                                broker_payload["value"] = broker_payload["value"] - miner_avg_kw
                                                 offline_miners.append(miners[miner].ip)
                                                 index = find_miner_index(online_miners, miners[miner].ip)
                                                 online_miners.pop(index)
@@ -174,7 +171,6 @@ async def load_shifting(miners):
                                                 stop_miner = await miners[miner].api.send_command("pause")
                                                 if stop_miner:
                                                     logger.logger.info(f" successfully paused {device}")
-                                                    broker_payload["value"] = broker_payload["value"] - miner_avg_kw
                                                     offline_miners.append(miners[miner].ip)
                                                     index = find_miner_index(online_miners, miners[miner].ip)
                                                     online_miners.pop(index)
