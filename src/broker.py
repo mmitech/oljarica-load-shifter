@@ -9,11 +9,11 @@ async def start_broker(ssl):
                 'type': 'tcp',
                 'bind': '0.0.0.0:1883',
             },
-            'ws-mqtt': {
-                'bind': '0.0.0.0:8080',
-                'type': 'ws',
-                "max_connections": 10,
-            },
+            # 'ws-mqtt': {
+            #     'bind': '0.0.0.0:8080',
+            #     'type': 'ws',
+            #     "max_connections": 10,
+            # },
             'ssl': {
                 'bind': '0.0.0.0:8883',
                 'type': 'tcp',

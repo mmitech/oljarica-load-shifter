@@ -14,9 +14,9 @@ async def start_client(username, password, ssl):
     await asyncio.sleep(2)
     client = MQTTClient(config=config)
     try:
-        # await client.connect(f'mqtt://{username}:{password}@127.0.0.1:1883')
+        await client.connect(f'mqtt://{username}:{password}@127.0.0.1:1883')
         # await client.connect(f'mqtts://{username}:{password}@broker.mmitech.info/', cafile={ssl['crt']})
-        await client.connect(f'mqtt://{username}:{password}@broker.mmitech.info/')
+        # await client.connect(f'mqtt://{username}:{password}@broker.mmitech.info/')
         logger.logger.info(" measurement listener connected")
         await client.subscribe([(power_topic, QOS_1)])
         logger.logger.info(" measurement listener subscribed")
