@@ -108,8 +108,8 @@ async def load_shifting(miners):
             elif ignore_readout:
                 logger.logger.debug(f" ignoring conroller readouts")
                 if run_non_stop and current_temperature < temp_halt_ambient:
+                    logger.logger.info(f" current temp in {location} is {current_temperature}˚C which is less than {temp_halt_ambient}˚C so all miners should be running")
                     if len(offline_miners) > 0:
-                        logger.logger.info(f" current temp in {location} is {current_temperature}˚C which is less than {temp_halt_ambient}˚C so all miners should be running")
                         num_miners_to_start = len(offline_miners)
                         if num_miners_to_start > 0:
                             logger.logger.info(f" we need to start {num_miners_to_start} miner(s)")
