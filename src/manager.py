@@ -54,9 +54,11 @@ async def get_miner_data(miners):
         total_hashrate = 0
         total_power = 0
         try:
-            all_miner_data = await asyncio.gather(*[miner.get_data() for miner in miners])
-            for miner_data in all_miner_data:
+            # all_miner_data = await asyncio.gather(*[miner.get_data() for miner in miners])
+            for miner in miners:
                 try:
+                    miner_data = await asyncio.gather(miner.get_data())
+                    miner_data = miner_data[0]
                     miner_hashrate = int(miner_data.hashrate)
                     if miner_hashrate > 0:
                         # if miner_hashrate < 70:
@@ -70,9 +72,6 @@ async def get_miner_data(miners):
                         miner_efficiency = 0
                     total_hashrate = total_hashrate + miner_hashrate
                     total_power = total_power + miner_wattage
-                except Exception as e:
-                    logger.logger.error(f" failed with error {e}")
-                try:
                     logger.logger.info(f"{miner_data.hostname}: {miner_hashrate}TH @ {miner_data.temperature_avg} ˚C {round(miner_wattage/1000, 2)} KW at {round(miner_efficiency, 2)} W/TH efficiency")
                     if int(miner_data.hashrate) > 0:
                         online_miners.append(miner_data.ip)
