@@ -100,7 +100,10 @@ async def start_miners(miners, num_miners_to_start):
                 if ip in offline_miners:
                     miner = find_miner_index(miners, ip)
                     if miner is not None and num_miners_to_start > 0 and num_miners_started != num_miners_to_start:
-                        resume_miner = await miners[miner].resume_mining()
+                        if reboot:
+                            resume_miner = await miners[miner].reboot()
+                        else:
+                            resume_miner = await miners[miner].resume_mining()
                         if resume_miner:
                             online_miners.append(miners[miner].ip)
                             index = find_miner_index(offline_miners, miners[miner].ip)
@@ -108,7 +111,10 @@ async def start_miners(miners, num_miners_to_start):
                             logger.logger.info(f" successfully resumed {device}")
                             num_miners_started += 1
                         else:
-                            resume_miner = await miners[miner].api.send_command("resume")
+                            if reboot:
+                                resume_miner = await miners[miner].api.send_command("reboot")
+                            else:
+                                resume_miner = await miners[miner].api.send_command("resume")
                             if resume_miner:
                                 online_miners.append(miners[miner].ip)
                                 index = find_miner_index(offline_miners, miners[miner].ip)

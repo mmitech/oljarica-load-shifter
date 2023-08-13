@@ -14,6 +14,12 @@ API_key = ""
 start_hour = 19
 stop_hour = 8
 
+
+# some pools kill the miner when it is paused for a long time
+# probably some DDoS protection against usless sessions
+# so instead reboot the miner to resume mining
+reboot = False
+
 # Since we are using air cooled rigs and since these rigs produce a real high level of noise
 # have these rigs stop at a certain temperature to avoid noise complaints
 temp_halt = True
