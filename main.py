@@ -26,7 +26,7 @@ async def get_miners():
         logger.logger.debug(f"{miners}")
         logger.logger.debug(f" conected to: {len(miners)} miners")
         try:
-            await manager.get_miner_data(miners)
+            await manager.get_miners_data(miners)
             await manager.load_shifting(miners)
             await asyncio.sleep(sleep_duration)
         except Exception as e:

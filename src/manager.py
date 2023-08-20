@@ -46,50 +46,48 @@ async def get_temperature(api_key, city):
         return None
 
 
-async def get_miner_data(miners):
+async def get_miner_data(miner):
+    global online_miners, offline_miners, total_hashrate, total_power
+    try:
+        miner_data = await asyncio.gather(miner.get_data())
+        miner_data = miner_data[0]
+        miner_hashrate = int(miner_data.hashrate)
+        if miner_hashrate > 0:
+            if miner_hashrate < 60:
+                if(miner_data.left_board_hashrate,miner_data.center_board_hashrate, miner_data.right_board_hashrate is not None) and \
+                    (miner_data.left_board_hashrate == 0 or miner_data.center_board_hashrate == 0 or miner_data.right_board_hashrate == 0):
+                    logger.logger.info(f" lower than expected hashrate on {miner_data.hostname} one of the HBs is not working")
+            miner_wattage = int(miner_data.wattage) if int(miner_data.wattage) > 0 else 2850
+            miner_efficiency = int(miner_data.efficiency) if int(miner_data.efficiency) > 0 else (2850/(miner_hashrate))
+        else:
+            miner_wattage = 0
+            miner_efficiency = 0
+        total_hashrate = total_hashrate + miner_hashrate
+        total_power = total_power + miner_wattage
+        logger.logger.info(f"{miner_data.hostname}: {miner_hashrate}TH @ {miner_data.temperature_avg} ˚C {round(miner_wattage/1000, 2)} KW at {round(miner_efficiency, 2)} W/TH efficiency")
+        if int(miner_data.hashrate) > 0:
+            online_miners.append(miner_data.ip)
+        else:
+            offline_miners.append(miner_data.ip) 
+    except Exception as e:
+        logger.logger.error(f" failed with error {e}")
+            
+async def get_miners_data(miners):
     with lock:
-        global online_miners, offline_miners, total_hashrate, total_power, broker_payload, updated_at
+        global online_miners, total_hashrate, total_power, updated_at
         online_miners.clear()
         offline_miners.clear()
         total_hashrate = 0
         total_power = 0
-        try:
-            # all_miner_data = await asyncio.gather(*[miner.get_data() for miner in miners])
-            for miner in miners:
-                try:
-                    miner_data = await asyncio.gather(miner.get_data())
-                    miner_data = miner_data[0]
-                    miner_hashrate = int(miner_data.hashrate)
-                    if miner_hashrate > 0:
-                        # if miner_hashrate < 70:
-                        #     if(miner_data.left_board_hashrate,miner_data.center_board_hashrate, miner_data.right_board_hashrate is not None) and \
-                        #         (miner_data.left_board_hashrate == 0 or miner_data.center_board_hashrate == 0 or miner_data.right_board_hashrate == 0):
-                        #         logger.logger.info(f" lower than expected hashrate on {miner_data.hostname} one of the HBs is not working")
-                        miner_wattage = int(miner_data.wattage) if int(miner_data.wattage) > 0 else 2850
-                        miner_efficiency = int(miner_data.efficiency) if int(miner_data.efficiency) > 0 else (2850/(miner_hashrate))
-                    else:
-                        miner_wattage = 0
-                        miner_efficiency = 0
-                    total_hashrate = total_hashrate + miner_hashrate
-                    total_power = total_power + miner_wattage
-                    logger.logger.info(f"{miner_data.hostname}: {miner_hashrate}TH @ {miner_data.temperature_avg} ˚C {round(miner_wattage/1000, 2)} KW at {round(miner_efficiency, 2)} W/TH efficiency")
-                    if int(miner_data.hashrate) > 0:
-                        online_miners.append(miner_data.ip)
-                    else:
-                        offline_miners.append(miner_data.ip)
-                except Exception as e:
-                    logger.logger.error(f" failed with error {e}")
-            if total_hashrate > 0:
-                logger.logger.info(f" we have {len(online_miners)} active miners with a total hashrate of {round(total_hashrate, 2)}TH with a total power of {round(total_power/1000, 2)}KW and an average efficiency of {round(total_power/total_hashrate, 2)}W/TH")
-            else:
-                logger.logger.info(f" we have {len(online_miners)} active miners with a total hashrate of {round(total_hashrate, 2)}TH with a total power of {round(total_power/1000, 2)}KW")
-        except Exception as e:
-            condition.notify()
-            logger.logger.error(f" failed with error {e}")
-        finally:
-            updated_at = int(time.time())
-            condition.notify()
-            
+        tasks = [get_miner_data(miner) for miner in miners]
+        await asyncio.gather(*tasks)
+        if total_hashrate > 0:
+            logger.logger.info(f" we have {len(online_miners)} active miners with a total hashrate of {round(total_hashrate, 2)}TH with a total power of {round(total_power/1000, 2)}KW and an average efficiency of {round(total_power/total_hashrate, 2)}W/TH")
+        else:
+            logger.logger.info(f" we have {len(online_miners)} active miners with a total hashrate of {round(total_hashrate, 2)}TH with a total power of {round(total_power/1000, 2)}KW") 
+        updated_at = int(time.time())
+        condition.notify()
+    
 async def start_miners(miners, num_miners_to_start):
     global offline_miners, total_hashrate, total_power, broker_payload, updated_at, processed
     logger.logger.info(f" we need to start {num_miners_to_start} miner(s)")
@@ -179,7 +177,7 @@ async def load_shifting(miners):
             if (int(time.time()) - updated_at) > 3600:
                 logger.logger.info(f" our data is older than 1 hour, trying to get new data")
                 condition.notify()
-                get_miner_data(miners)
+                get_miners_data(miners)
             elif not broker_payload and not ignore_readout:
                 condition.notify()
                 logger.logger.debug(f" no messages received yet")
