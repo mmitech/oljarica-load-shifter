@@ -221,8 +221,8 @@ async def load_shifting(miners):
                         logger.logger.info(f" all miners are offline")    
             else:                
                 power = broker_payload["value"]
-                if power - buffer > 0 and len(online_miners) > 0:
-                    num_miners_to_pause = math.ceil((power - buffer) / miner_avg_kw)
+                if power + buffer > 0 and len(online_miners) > 0:
+                    num_miners_to_pause = math.ceil((power + buffer) / miner_avg_kw)
                     num_miners_to_pause = num_miners_to_pause if num_miners_to_pause < len(online_miners) else len(online_miners)
                     logger.logger.debug(f" these are our offline miners {offline_miners}")
                     if num_miners_to_pause > 0:
@@ -231,7 +231,7 @@ async def load_shifting(miners):
                     else:
                         processed = True
                         logger.logger.info(f" all miners are offline")   
-                elif power - buffer < 0 and abs(power) > buffer and len(offline_miners) > 0:
+                elif power + buffer < 0 and abs(power) > buffer and len(offline_miners) > 0:
                     num_miners_to_start = math.floor(abs(power + buffer) / miner_avg_kw)
                     num_miners_to_start = num_miners_to_start if num_miners_to_start < len(offline_miners) else len(offline_miners)
                     logger.logger.debug(f" these are our online miners {online_miners}")
