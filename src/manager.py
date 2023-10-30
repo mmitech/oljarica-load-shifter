@@ -14,7 +14,7 @@ updated_at = 0
 
 async def broker_messages(topic, payload):
     global processed
-    logger.logger.info(f" got a new message reading, updating our payload")
+    logger.logger.info(f" got a new message reading, updating our payload, payload: {broker_payload}")
     for readout in payload["values"]:
         if readout["dataTypeEnum"] == "POWER_ACTIVE":   
             readout["value"] = round(readout["value"]/1000, 2)
