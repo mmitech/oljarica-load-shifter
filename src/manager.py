@@ -14,7 +14,7 @@ updated_at = 0
 
 async def broker_messages(topic, payload):
     global processed
-    logger.logger.debug(f" got a new message reading, updating our payload")
+    logger.logger.info(f" got a new message reading, updating our payload")
     for readout in payload["values"]:
         if readout["dataTypeEnum"] == "POWER_ACTIVE":   
             readout["value"] = round(readout["value"]/1000, 2)
@@ -170,19 +170,19 @@ async def load_shifting(miners):
     with lock:
         global online_miners, offline_miners, total_hashrate, total_power, broker_payload, updated_at, processed
         current_time = datetime.datetime.now().time()
-        logger.logger.debug(f" payload: {broker_payload}")
+        logger.logger.info(f" payload: {broker_payload}")
         if not processed or run_non_stop:
             current_temperature = await get_temperature(API_key, location)
-            logger.logger.debug(f" current temp in {location} is {current_temperature}˚C")
+            logger.logger.info(f" current temp in {location} is {current_temperature}˚C")
             if (int(time.time()) - updated_at) > 3600:
                 logger.logger.info(f" our data is older than 1 hour, trying to get new data")
                 condition.notify()
                 get_miners_data(miners)
             elif not broker_payload and not ignore_readout:
                 condition.notify()
-                logger.logger.debug(f" no messages received yet")
+                logger.logger.info(f" no messages received yet")
             elif ignore_readout:
-                logger.logger.debug(f" ignoring conroller readouts")
+                logger.logger.info(f" ignoring conroller readouts")
                 if run_non_stop and current_temperature < temp_halt_ambient:
                     logger.logger.info(f" current temp in {location} is {current_temperature}˚C which is less than {temp_halt_ambient}˚C so all miners should be running")
                     if len(offline_miners) > 0:
@@ -245,10 +245,10 @@ async def load_shifting(miners):
                         logger.logger.info(f" all miners are online")
                 else:
                     condition.notify()
-                    logger.logger.debug(" nothing to do right now")
+                    logger.logger.info(" nothing to do right now")
                     pass
                 condition.notify()
             condition.notify()
         else:
             condition.notify()
-            logger.logger.debug(" measurement already processed")
+            logger.logger.info(" measurement already processed")
