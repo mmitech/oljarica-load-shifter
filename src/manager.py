@@ -100,7 +100,12 @@ async def start_miners(miners, num_miners_to_start):
                     miner = find_miner_index(miners, ip)
                     if miner is not None and num_miners_to_start > 0 and num_miners_started != num_miners_to_start:
                         if reboot:
-                            resume_miner = await miners[miner].reboot()
+                            # resume_miner = await miners[miner].reboot()
+                            resume_miner = await miners[miner].api.send_command("resume")
+                            disablepool = await miners[miner].api.send_command("disablepool")
+                            enablepool = await miners[miner].api.send_command("enablepool")
+                            pause_miner = await miners[miner].api.send_command("pause")
+                            resume_miner = await miners[miner].api.send_command("resume")
                         else:
                             resume_miner = await miners[miner].resume_mining()
                         if resume_miner:
@@ -111,7 +116,12 @@ async def start_miners(miners, num_miners_to_start):
                             num_miners_started += 1
                         else:
                             if reboot:
-                                resume_miner = await miners[miner].api.send_command("reboot")
+                                # resume_miner = await miners[miner].api.send_command("reboot")
+                                resume_miner = await miners[miner].api.send_command("resume")
+                                disablepool = await miners[miner].api.send_command("disablepool")
+                                enablepool = await miners[miner].api.send_command("enablepool")
+                                pause_miner = await miners[miner].api.send_command("pause")
+                                resume_miner = await miners[miner].api.send_command("resume")
                             else:
                                 resume_miner = await miners[miner].api.send_command("resume")
                             if resume_miner:
