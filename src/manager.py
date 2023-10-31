@@ -181,7 +181,6 @@ async def load_shifting(miners):
     with lock:
         global online_miners, offline_miners, total_hashrate, total_power, broker_payload, updated_at, processed
         current_time = datetime.datetime.now().time()
-        logger.logger.info(f" payload: {broker_payload}")
         if not processed or run_non_stop:
             current_temperature = await get_temperature(API_key, location)
             logger.logger.info(f" current temp in {location} is {current_temperature}˚C")
@@ -230,7 +229,8 @@ async def load_shifting(miners):
                     else:
                         processed = True
                         logger.logger.info(f" all miners are offline")    
-            else:                
+            else:   
+                logger.logger.info(f" payload: {broker_payload}")             
                 power = broker_payload["value"]
                 if power + buffer > 0 and len(online_miners) > 0:
                     num_miners_to_pause = math.ceil((power + buffer) / miner_avg_kw)
