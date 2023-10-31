@@ -1,4 +1,4 @@
-import asyncio, math, threading, time, datetime, requests
+import asyncio, math, threading, time, datetime, requests, json, socket
 from . import logger
 from config import *
 
@@ -11,6 +11,36 @@ processed = False
 total_hashrate = 0
 total_power = 0
 updated_at = 0
+
+async def send_bosminer_command(host, command_dict):
+    data = json.dumps(command_dict)
+
+    # Create a socket connection to the Bosminer API
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+        s.connect((host, 4028))
+        s.sendall(data.encode())
+
+        # Read the response in chunks until we receive all data
+        chunks = []
+        while True:
+            chunk = s.recv(4096)
+            if not chunk:
+                break
+            chunks.append(chunk)
+
+    # Join all chunks and decode
+    full_response = b"".join(chunks).decode()
+
+    # Attempt to extract valid JSON
+    try:
+        start = full_response.index('{')
+        end = full_response.rindex('}') + 1
+        json_data = full_response[start:end]
+        return json.loads(json_data)
+    except ValueError as e:
+        print(f"Error parsing JSON: {e}")
+        print(f"Full response: {full_response}")
+        return None
 
 async def broker_messages(topic, payload):
     global processed
@@ -55,9 +85,10 @@ async def get_miner_data(miner):
         miner_hashrate = int(miner_data.hashrate)
         if miner_hashrate > 0:
             if miner_hashrate < 60:
-                if(miner_data.left_board_hashrate,miner_data.center_board_hashrate, miner_data.right_board_hashrate is not None) and \
-                    (miner_data.left_board_hashrate == 0 or miner_data.center_board_hashrate == 0 or miner_data.right_board_hashrate == 0):
-                    logger.logger.info(f" lower than expected hashrate on {miner_data.hostname} one of the HBs is not working")
+                # if(miner_data.left_board_hashrate,miner_data.center_board_hashrate, miner_data.right_board_hashrate is not None) and \
+                #     (miner_data.left_board_hashrate == 0 or miner_data.center_board_hashrate == 0 or miner_data.right_board_hashrate == 0):
+                #     logger.logger.info(f" lower than expected hashrate on {miner_data.hostname} one of the HBs is not working")
+                logger.logger.info(f" lower than expected hashrate on {miner_data.hostname} one of the HBs is not working")
             miner_wattage = int(miner_data.wattage) if int(miner_data.wattage) > 0 else 2850
             miner_efficiency = int(miner_data.efficiency) if int(miner_data.efficiency) > 0 else (2850/(miner_hashrate))
         else:
@@ -101,9 +132,9 @@ async def start_miners(miners, num_miners_to_start):
                     if miner is not None and num_miners_to_start > 0 and num_miners_started != num_miners_to_start:
                         if reboot:
                             # resume_miner = await miners[miner].reboot()
-                            resume_miner = await miners[miner].api.send_command("resume")
-                            disablepool = await miners[miner].api.send_command("disablepool")
-                            enablepool = await miners[miner].api.send_command("enablepool")
+                            # resume_miner = await miners[miner].api.send("resume")
+                            disablepool = await send_bosminer_command(miners[miner].ip, {"command": "disablepool","parameter": 0})
+                            enablepool = await send_bosminer_command(miners[miner].ip, {"command": "enablepool","parameter": 0})
                             pause_miner = await miners[miner].api.send_command("pause")
                             resume_miner = await miners[miner].api.send_command("resume")
                         else:
@@ -117,9 +148,9 @@ async def start_miners(miners, num_miners_to_start):
                         else:
                             if reboot:
                                 # resume_miner = await miners[miner].api.send_command("reboot")
-                                resume_miner = await miners[miner].api.send_command("resume")
-                                disablepool = await miners[miner].api.send_command("disablepool")
-                                enablepool = await miners[miner].api.send_command("enablepool")
+                                # resume_miner = await miners[miner].api.send_command("resume")
+                                disablepool = await send_bosminer_command(miners[miner].ip, {"command": "disablepool","parameter": 0})
+                                enablepool = await send_bosminer_command(miners[miner].ip, {"command": "enablepool","parameter": 0})
                                 pause_miner = await miners[miner].api.send_command("pause")
                                 resume_miner = await miners[miner].api.send_command("resume")
                             else:
